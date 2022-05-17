@@ -1,0 +1,94 @@
+@startuml
+class com.cos.security1.config.WebMvcConfig {
++ void configureViewResolvers(ViewResolverRegistry)
+}
+class com.cos.security1.config.oauth.provider.GoogleUserInfo {
+- Map<String,Object> attributes
++ String getProviderId()
++ String getProvider()
++ String getEmail()
++ String getName()
+}
+class com.cos.security1.controller.IndexController {
+- UserRepository userRepository
+- BCryptPasswordEncoder bCryptPasswordEncoder
++ String loginTest(Authentication,PrincipalDetails)
++ String testOauthLogin(Authentication,OAuth2User)
++ String index()
++ String user(PrincipalDetails)
++ String admin()
++ String manager()
++ String loginForm()
++ String joinForm()
++ String join(User)
++ String info()
++ String data()
+}
+interface com.cos.security1.config.oauth.provider.OAuth2UserInfo {
+~ String getProviderId()
+~ String getProvider()
+~ String getEmail()
+~ String getName()
+}
+class com.cos.security1.config.auth.PrincipalDetailsService {
+- UserRepository userRepository
++ UserDetails loadUserByUsername(String)
+}
+class com.cos.security1.config.SecurityConfig {
+- PrincipalOauth2UserService principalOauth2UserService
+# void configure(HttpSecurity)
+}
+class com.cos.security1.config.auth.PrincipalDetails {
+- User user
+- Map<String,Object> attributes
++ Collection<? extends GrantedAuthority> getAuthorities()
++ String getPassword()
++ String getUsername()
++ boolean isAccountNonExpired()
++ boolean isAccountNonLocked()
++ boolean isCredentialsNonExpired()
++ boolean isEnabled()
++ Map<String,Object> getAttributes()
++ String getName()
+}
+class com.cos.security1.config.oauth.PrincipalOauth2UserService {
+- BCryptPasswordEncoder bCryptPasswordEncoder
+- UserRepository userRepository
++ OAuth2User loadUser(OAuth2UserRequest)
+}
+class com.cos.security1.config.oauth.provider.FacebookUserInfo {
+- Map<String,Object> attributes
++ String getProviderId()
++ String getProvider()
++ String getEmail()
++ String getName()
+}
+class com.cos.security1.model.User {
+- int id
+- String username
+- String password
+- String email
+- String role
+- String provider
+- String providerId
+- Timestamp createDate
+}
+interface com.cos.security1.repository.UserRepository {
++ User findByUsername(String)
+}
+class com.cos.security1.Security1Application {
++ BCryptPasswordEncoder encodePwd()
++ {static} void main(String[])
+}
+
+
+org.springframework.web.servlet.config.annotation.WebMvcConfigurer <|.. com.cos.security1.config.WebMvcConfig
+com.cos.security1.config.oauth.provider.OAuth2UserInfo <|.. com.cos.security1.config.oauth.provider.GoogleUserInfo
+org.springframework.security.core.userdetails.UserDetailsService <|.. com.cos.security1.config.auth.PrincipalDetailsService
+org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter <|-- com.cos.security1.config.SecurityConfig
+org.springframework.security.core.userdetails.UserDetails <|.. com.cos.security1.config.auth.PrincipalDetails
+org.springframework.security.oauth2.core.user.OAuth2User <|.. com.cos.security1.config.auth.PrincipalDetails
+org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService <|-- com.cos.security1.config.oauth.PrincipalOauth2UserService
+com.cos.security1.config.oauth.provider.OAuth2UserInfo <|.. com.cos.security1.config.oauth.provider.FacebookUserInfo
+org.springframework.data.jpa.repository.JpaRepository <|-- com.cos.security1.repository.UserRepository
+@enduml

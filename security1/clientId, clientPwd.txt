@@ -1,0 +1,17 @@
+Google
+
+clientId : 364919719093-savm4hobdvd706i81uvaombi5573riom.apps.googleusercontent.com
+
+clientPwd : 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
+
+Facebook
+
+clientId : 680098016626499
+
+clientPwd : e59ec1a5e4768684ecc11b4e9dd3cde5
+
+Naver
+
+clientId : 39cG7nkfabEx1TaENicP
+
+clientPwd : nadDQQx6t4
