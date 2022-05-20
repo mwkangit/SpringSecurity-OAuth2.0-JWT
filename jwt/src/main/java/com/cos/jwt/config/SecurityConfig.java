@@ -1,14 +1,17 @@
 package com.cos.jwt.config;
 
+import com.cos.jwt.config.jwt.JwtAuthenticationFilter;
 import com.cos.jwt.filter.MyFilter1;
 import com.cos.jwt.filter.MyFilter3;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration // IoC할 수 있게 만든다.
@@ -25,7 +28,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         // 아래 BasicAuthenticationFilter를 쓰면 SpringFilterChain의 이 필터가 실행되기 전에 내가 만든 필터가 실행된다는 뜻이다.
         // 하지만 시큐리티 필터에 생성한 필터를 걸어줄 필요없이 IoC로 필터를 적용할 수 있다.
         // 만약 시큐리티 필터보다 먼저 내 필터를 실행하고 싶으면 before로 시큐리티 필터의 가장 앞을 설정하면 된다.
-        // http.addFilterBefore(new MyFilter3(), BasicAuthenticationFilter.class);
+        http.addFilterBefore(new MyFilter3(), SecurityContextPersistenceFilter.class);
         http.csrf().disable();
         // jwt설정의 기본이다.
         // stateless 서버로 만들겠다는 뜻이다.
@@ -39,6 +42,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin().disable()
                 // 기본적인 http 로그인 방식을 사용하지 않는 것이다.
                 .httpBasic().disable()
+                // formLogin().disable()로 실행되지 않는 필터를 실행되게 하려고 다시 적용한다.
+                // id, pw 로 로그인을 진행하는 필터이므로 AuthenticationManger이라는 파라미터를 줘야 한다.
+                // WebSecurityConfigurerAdapter 를 상속받았는데 이 메소드에 AuthenticationManager가 포함되어 있어서 그대로 사용한다.
+                .addFilter(new JwtAuthenticationFilter(authenticationManager()))
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
                 .access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
