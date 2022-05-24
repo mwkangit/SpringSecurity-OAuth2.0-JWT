@@ -1873,3 +1873,126 @@ JWT 토큰을 생성하고 클라이언트 쪽으로 JWT 토큰을 응답한다.
 서버는 JWT 토큰이 유효한지를 판단해야 하는데 현재 이것을 판단할 필터가 없다.
 
 이제 만들어보자.
+
+
+
+## Using Token & Completing JWT
+
+
+
+로그인이 완료된 상황에서 토큰을 통해 전자 서명을 이용하여 개인정보에 접근할 수 있도록 하겠다.
+
+
+
+```java
+// 시큐리티가 filter 가지고 있는데 그 필터 중 BasicAuthenticationFilter가 있다.
+// 권한이나 인증이 필요한 특정 주소 요청 시 위 필터를 반드시 접근하게 된다.
+// 만약 권한이나 인증이 필요한 주소가 아닌 경우 이 필터를 접근하지 않는다.
+public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
+
+    private UserRepository userRepository;
+
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
+        super(authenticationManager);
+        this.userRepository = userRepository;
+    }
+
+    // 인증이나 권한이 필요한 주소요청이 있을 때 해당 필터를 타게 된다. BasicAuthenticationFilter을 상속받았기 때문이다.
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+//        super.doFilterInternal(request, response, chain);
+        System.out.println("인증이나 권한이 필요한 주소 요청이 됨.");
+
+        String jwtHeader = request.getHeader("Authorization");
+        System.out.println("jwtHeader = " + jwtHeader);
+
+        // Authorization이라는 헤더가 없으면 실행하는 코드이다. 즉, 헤더가 있는지 확인하는 것이다.
+        if(jwtHeader == null || !jwtHeader.startsWith("Bearer")){
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // JWT 토큰을 검증을 해서 정상적인 사용자인지 확인해야 한다.
+        // "Bearer "을 ""로 만든다.
+        String jwtToken = request.getHeader("Authorization").replace("Bearer ","");
+
+        // 이전에 토큰 생성시 사용한 알고리즘과 시크릿 키를 입력하고 jwtToken을 서명한다.
+        // 토큰 생성시 username이라는 클레임을 작성했으며 그것을 꺼내오는 것이다.
+        String username = JWT.require(Algorithm.HMAC512("cos")).build().verify(jwtToken).getClaim("username").asString();
+
+        // username이 제대로 들어오면 서명이 잘된 것이다.
+        // 서명이 정상적으로 되었을 시 실행되는 코드이다.
+        if(username != null){
+            System.out.println("username 정상");
+            User userEntity = userRepository.findByUsername(username);
+
+            PrincipalDetails principalDetails = new PrincipalDetails(userEntity);
+            // JwtAuthenticationFilter처럼 정상 로그인 시 Authentication을 만드는게 아닌 Authentication 객체를 강제로 만드는 것이다.
+            // 서비스를 통해 로그인을 진행하는 것이 아닌 임의로 Authentication 객체를 생성하는 것이기 때문에 패스워드에 null을 입력해도 된다.
+            // username이 null이 아닌것을 확인하여 정상 서명 상태이므로 authentication 만들어도 된다.
+            // 마지막 매개변수로 권한을 알려준다. 즉, 정상적인 로그인 과정이 아니고 JWT 토큰 서명이 정상일 때 생성하는 Authentication 객체이므로 권한을 알려준다.
+            // 마지막 강의에서 이 부분에서 세션이 만들어지지 않아서(객체가 생성되지 않아서) null이 발생하여 NullPointException과 함께 인가가 되지 않는다.
+            // 이 메소드 가장 위의 super.doFilterInternal을 주석처리 해야한다. 허용하면 위에서 응답 1번, 아래에서 응답 1번으로 중복되어 오류가 발생한다.
+            Authentication authentication = new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
+
+            // 이 코드는 시큐리티를 저장할 수 있는 세션 공간을 찾은 것이다.
+            // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장한 것이다.
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        }
+        chain.doFilter(request, response);
+        return;
+
+    }
+}
+```
+
+```java
+// SecurityConfig
+
+http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                // @CrossOrigin은 인증이 없을 때 실행되고 시큐리티 필터에 필터를 등록해야 인증이 있을 때 실행된다.
+                // 이걸로 이제 요청 시 시큐리티의 로그인 창이 뜨지 않는다.
+                .addFilter(corsConfig.corsFilter())
+                // jwt 서버이므로 폼 로그인을 하지 않은다.
+                .formLogin().disable()
+                // 기본적인 http 로그인 방식을 사용하지 않는 것이다.
+                .httpBasic().disable()
+                // formLogin().disable()로 실행되지 않는 필터를 실행되게 하려고 다시 적용한다.
+                // id, pw 로 로그인을 진행하는 필터이므로 AuthenticationManger이라는 파라미터를 줘야 한다.
+                // WebSecurityConfigurerAdapter 를 상속받았는데 이 메소드에 AuthenticationManager가 포함되어 있어서 그대로 사용한다.
+                .addFilter(new JwtAuthenticationFilter(authenticationManager()))
+                .addFilter(new JwtAuthorizationFilter(authenticationManager(), userRepository))
+```
+
+```java
+// RestApiController
+
+// user, manager, admin 권한만 접근가능
+@GetMapping("/api/v1/user")
+public String user() {
+    return "user";
+}
+
+// manager, admin 권한만 접근가능
+@GetMapping("/api/v1/manager")
+public String manager(){
+    return "manager";
+}
+
+// admin 권한만 접근가능
+@GetMapping("/api/v1/admin")
+public String admin(){
+    return "admin";
+}
+```
+
+BasicAuthenticationFilter는 권한이나 인증이 필요한 특정 주소 요청 시 위 필터를 반드시 접근하게 된다.
+만약 권한이나 인증이 필요한 주소가 아닌 경우 이 필터를 접근하지 않는다.
+
+권한이 없는 상태에서 권한이 필요한 페이지로 요청하면 BasicAuthenticationFilter에 의해 `Access Denied`가 발생한다.
+
+필터에서 인증이 완료되면 authentication 객체를 강제로 생성한 후 넘겨주면 시큐리티가 인가를 자동으로 해주게 된다.
+
+이렇게 인가까지 처리할 수 있으며 JwtAuthorizationFilter의 doFilterInternal에서 super.doFilterInternal을 주석처리 해야 필터 중복이 일어나지 않는다.

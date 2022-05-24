@@ -12,23 +12,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FilterConfig {
 
-    @Bean
-    public FilterRegistrationBean<MyFilter1> filter1(){
-        FilterRegistrationBean<MyFilter1> bean = new FilterRegistrationBean<>(new MyFilter1());
-        // 모든 요청에 대해 다 하라.
-        bean.addUrlPatterns("/*");
-        // 우선 순위 설정으로 낮은 번호가 필터 중에서 가장 먼저 실행된다.
-        bean.setOrder(0);
-        return bean;
-    }
-
-    @Bean
-    public FilterRegistrationBean<MyFilter2> filter2(){
-        FilterRegistrationBean<MyFilter2> bean = new FilterRegistrationBean<>(new MyFilter2());
-        // 모든 요청에 대해 다 하라.
-        bean.addUrlPatterns("/*");
-        // 우선 순위 설정으로 낮은 번호가 필터 중에서 가장 먼저 실행된다.
-        bean.setOrder(1);
-        return bean;
-    }
+//    @Bean
+//    public FilterRegistrationBean<MyFilter1> filter1(){
+//        FilterRegistrationBean<MyFilter1> bean = new FilterRegistrationBean<>(new MyFilter1());
+//        // 모든 요청에 대해 다 하라.
+//        bean.addUrlPatterns("/*");
+//        // 우선 순위 설정으로 낮은 번호가 필터 중에서 가장 먼저 실행된다.
+//        bean.setOrder(0);
+//        return bean;
+//    }
+//
+//    @Bean
+//    public FilterRegistrationBean<MyFilter2> filter2(){
+//        FilterRegistrationBean<MyFilter2> bean = new FilterRegistrationBean<>(new MyFilter2());
+//        // 모든 요청에 대해 다 하라.
+//        bean.addUrlPatterns("/*");
+//        // 우선 순위 설정으로 낮은 번호가 필터 중에서 가장 먼저 실행된다.
+//        bean.setOrder(1);
+//        return bean;
+//    }
 }

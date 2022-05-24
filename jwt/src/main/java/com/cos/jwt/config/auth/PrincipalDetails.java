@@ -21,7 +21,7 @@ public class PrincipalDetails implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> authorities = new ArrayList<>();
         user.getRoleList().forEach(r->{
-            authorities.add(()->r);
+            authorities.add(()->r); // 자바스크립트에서는 () -> r 하면 리턴이 되었었다. 여기서도 잘 된다;;
         });
         return authorities;
     }
